@@ -237,13 +237,15 @@ if (nDelta === -1) {
 
 // zastąp istniejącą funkcję getTaskExecSummary tą wersją
 export async function getTaskExecSummary(taskId) {
-    const { rows } = await pool.query(
-      `
+  const { rows } = await pool.query(
+    `
       SELECT
         m.id               AS "materialId",
         m.number           AS "number",
-        m.name             AS "name",
-        m.unit             AS "unit",
+        m.common           AS "common",
+        m.pl               AS "pl",
+        m.de               AS "de",
+        m.en               AS "en",
         m.image_url        AS "imageUrl",
         m.active           AS "active",
         COALESCE(te.qty, 0)::integer AS "startQty",
@@ -256,17 +258,16 @@ export async function getTaskExecSummary(taskId) {
         ON te.material_id = m.id
        AND te.task_id = $1
       WHERE m.active = true
-      GROUP BY m.id, m.number, m.name, m.unit, m.image_url, m.active, te.qty
+      GROUP BY m.id, m.number, m.common, m.pl, m.de, m.en, m.image_url, m.active, te.qty
       ORDER BY m.number ASC
-      `,
-      [taskId]
-    );
-  
-    return { ok: true, items: rows };
-  }
-  
-  
-  export async function getTaskHeader(taskId) {
+    `,
+    [taskId]
+  );
+
+  return { ok: true, items: rows };
+}
+
+export async function getTaskHeader(taskId) {
     const { rows } = await pool.query(
       `SELECT id, task_no, status, operator_id, vehicle_plate
        FROM tasks
@@ -360,37 +361,39 @@ export async function createOperatorSession(taskId, operatorId) {
  * Jeśli operatorId nie ma aktywnej sesji, funkcja wybiera ostatnią sesję operatora (jeśli istnieje).
  */
 export async function getTaskExecSummaryForOperatorSession(taskId, operatorId) {
-    // znajdź ostatnią sesję operatora dla tego taska (może być NULL)
-    const sessionRes = await pool.query(
-      `
+  // znajdź ostatnią sesję operatora dla tego taska (może być NULL)
+  const sessionRes = await pool.query(
+    `
       SELECT id, started_at
       FROM public.task_operator_sessions
       WHERE task_id = $1
         AND operator_id = $2
       ORDER BY started_at DESC
       LIMIT 1
-      `,
-      [taskId, operatorId]
-    );
-  
-    const sessionId = sessionRes.rows[0]?.id || null;
-  
-    const { rows } = await pool.query(
-      `
+    `,
+    [taskId, operatorId]
+  );
+
+  const sessionId = sessionRes.rows[0]?.id || null;
+
+  const { rows } = await pool.query(
+    `
       SELECT
         m.id               AS "materialId",
         m.number           AS "number",
-        m.name             AS "name",
-        m.unit             AS "unit",
+        m.common           AS "common",
+        m.pl               AS "pl",
+        m.de               AS "de",
+        m.en               AS "en",
         m.image_url        AS "imageUrl",
         m.active           AS "active",
-  
+
         -- PLAN (z task_exec_items, source = 'PLAN')
         COALESCE((SELECT qty FROM public.task_exec_items te WHERE te.task_id = $1 AND te.material_id = m.id AND te.source = 'PLAN'), 0)::integer AS "plan",
-  
+
         -- BYŁO (snapshot dla sesji operatora)
         COALESCE((SELECT start_qty FROM public.task_operator_snapshots ts WHERE ts.session_id = $2 AND ts.material_id = m.id), 0)::integer AS "bylo",
-  
+
         -- ILE_DODALEM: delta dla tego actor od momentu session.started_at (jeśli session istnieje)
         COALESCE((
           SELECT SUM(a.delta)
@@ -400,7 +403,7 @@ export async function getTaskExecSummaryForOperatorSession(taskId, operatorId) {
             AND a.actor_id = $3
             AND ($2 IS NULL OR a.created_at >= (SELECT started_at FROM public.task_operator_sessions WHERE id = $2 LIMIT 1))
         ), 0)::integer AS "ileDodalem",
-  
+
         -- JEST: plan + sum(all deltas)
         (COALESCE((SELECT qty FROM public.task_exec_items te WHERE te.task_id = $1 AND te.material_id = m.id AND te.source = 'PLAN'), 0)
          + COALESCE((
@@ -410,14 +413,14 @@ export async function getTaskExecSummaryForOperatorSession(taskId, operatorId) {
                AND a2.material_id = m.id
            ), 0)
         )::integer AS "jest"
-  
+
       FROM public.materials m
       WHERE m.active = true
       ORDER BY m.number ASC
-      `,
-      [taskId, sessionId, operatorId]
-    );
-  
-    return { ok: true, items: rows, sessionId };
-  }
-  
+    `,
+    [taskId, sessionId, operatorId]
+  );
+
+  return { ok: true, items: rows, sessionId };
+}
+

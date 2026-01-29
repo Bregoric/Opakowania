@@ -1,10 +1,5 @@
 import pool from "../db/db.js";
-
-function materialLocalizedName(m, locale) {
-  if (locale === "de") return m.de ?? m.en ?? m.pl;
-  if (locale === "en") return m.en ?? m.de ?? m.pl;
-  return m.pl; // pl oraz inne locale fallbackują do pl
-}
+import { mapMaterial } from "../lib/materialLocale.js";
 
 export async function listMaterials(req, res) {
   try {
@@ -19,17 +14,13 @@ export async function listMaterials(req, res) {
         rodzaj,
         ksiegowanie,
         image_url,
-        active,
-        common AS name,        -- kompatybilność dla obecnego EJS
-        'szt.'::text AS unit   -- kompatybilność po usunięciu unit
+        active
       FROM materials
+      ORDER BY number ASC
     `);
 
     const locale = res.locals.locale || "pl";
-    const materials = result.rows.map((m) => ({
-      ...m,
-      localizedName: materialLocalizedName(m, locale),
-    }));
+    const materials = result.rows.map((m) => mapMaterial(m, locale));
 
     res.render("materials/list", { materials });
   } catch (err) {

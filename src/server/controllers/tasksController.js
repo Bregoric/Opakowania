@@ -9,6 +9,8 @@ import {
     getTaskHeader as getTaskHeaderService
   } from "../services/taskService.js";
 
+import { mapMaterial } from "../lib/materialLocale.js";
+
 
   
   function mapError(res, err) {
@@ -52,7 +54,9 @@ export async function executeView(req, res) {
         summaryResult = await getTaskExecSummaryService(taskId);
       }
   
-      const items = summaryResult.items || [];
+      const locale = res.locals.locale || 'pl';
+
+      const items = (summaryResult.items || []).map((it) => mapMaterial(it, locale));
   
       return res.render("tasks/execute", {
         taskId,
@@ -90,8 +94,9 @@ export async function applyDeltaHtmx(req, res) {
   
       // zwróć od razu odświeżony wiersz (po sumowaniu)
       const summary = await getTaskExecSummaryForOperatorSession(taskId, actorId);
-      const item = summary.items.find((x) => x.materialId === materialId);
-  
+      const locale = res.locals.locale || 'pl';
+      const rawItem = summary.items.find((x) => x.materialId === materialId);
+      const item = rawItem ? mapMaterial(rawItem, locale) : null;
       return res.render("tasks/partials/materialRow", { taskId, actorId, item });
     } catch (err) {
       return mapError(res, err);

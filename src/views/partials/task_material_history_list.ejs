@@ -16,32 +16,42 @@
           <th style="text-align:left; border-bottom:1px solid #eee; padding:6px;">Czas</th>
           <th style="text-align:left; border-bottom:1px solid #eee; padding:6px;">Operator</th>
           <th style="text-align:left; border-bottom:1px solid #eee; padding:6px;">Materiał</th>
-          <th style="text-align:right; border-bottom:1px solid #eee; padding:6px;">Delta</th>
+          <th style="text-align:right; border-bottom:1px solid #eee; padding:6px;">Różnica</th>
         </tr>
       </thead>
       <tbody>
         <% if (!actions || actions.length === 0) { %>
           <tr><td colspan="4" style="padding:8px;"><em>Brak akcji.</em></td></tr>
-        <% } %>
+        <% } else { %>
+          <% actions.forEach(a => { %>
+            <tr>
+              <td style="padding:6px; border-bottom:1px solid #f3f3f3;">
+                <%= new Date(a.created_at).toLocaleString() %>
+              </td>
   
-        <% actions.forEach(a => { %>
-          <tr>
-            <td style="padding:6px; border-bottom:1px solid #f3f3f3;">
-              <%= new Date(a.created_at).toLocaleString() %>
-            </td>
-            <td style="padding:6px; border-bottom:1px solid #f3f3f3;">
-              <%= a.actor_name || a.actor_id || "—" %>
-            </td>
-            <td style="padding:6px; border-bottom:1px solid #f3f3f3;">
-              <strong><%= a.material_number || "" %></strong>
-              <%= a.material_name || "" %>
-              <span style="color:#666;">(<%= a.material_unit || "" %>)</span>
-            </td>
-            <td style="padding:6px; border-bottom:1px solid #f3f3f3; text-align:right; font-weight:700;">
-              <%= a.delta > 0 ? "+" + a.delta : a.delta %>
-            </td>
-          </tr>
-        <% }) %>
+              <td style="padding:6px; border-bottom:1px solid #f3f3f3;">
+                <%= a.actor_name || a.actor_id || "—" %>
+              </td>
+  
+              <td style="padding:6px; border-bottom:1px solid #f3f3f3;">
+                <div>
+                  <strong><%= a.material_number || "" %></strong>
+                  <span style="color:#666;">(szt.)</span>
+                </div>
+                <div>
+                  <span><%= a.material_common || "" %></span>
+                  <% if (a.material_localized) { %>
+                    <span style="color:#666;"> — <%= a.material_localized %></span>
+                  <% } %>
+                </div>
+              </td>
+  
+              <td style="padding:6px; border-bottom:1px solid #f3f3f3; text-align:right; font-weight:700;">
+                <%= a.delta > 0 ? "+" + a.delta : a.delta %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } %>
       </tbody>
     </table>
   </div>

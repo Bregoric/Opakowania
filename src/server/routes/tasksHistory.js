@@ -7,7 +7,8 @@
 //   GET  /tasks/:id/history/:auditId
 
 import express from "express";
-import pool from "../db/pool.js"; // <- istnieje po utworzeniu src/server/db/pool.js
+import pool from "../db/pool.js";
+import { mapMaterial } from "../lib/materialLocale.js"; // <- istnieje po utworzeniu src/server/db/pool.js
 
 const router = express.Router();
 
@@ -228,12 +229,12 @@ router.get("/:id/history/:auditId", ensureCanViewTask, async (req, res, next) =>
 // ==================== MATERIAL ACTIONS HISTORY ====================
 // GET /tasks/:id/material-history/partial
 router.get("/:id/material-history/partial", ensureCanViewTask, async (req, res, next) => {
-    try {
-      const taskId = req.params.id;
-      const limit = Math.min(200, parseInt(req.query.limit || "50", 10));
-  
-      const { rows } = await pool.query(
-        `
+  try {
+    const taskId = req.params.id;
+    const limit = Math.min(200, parseInt(req.query.limit || "50", 10));
+
+    const { rows } = await pool.query(
+      `
         SELECT
           a.created_at,
           a.delta,
@@ -241,60 +242,107 @@ router.get("/:id/material-history/partial", ensureCanViewTask, async (req, res, 
           u.login AS actor_name,
           a.material_id,
           m.number AS material_number,
-          m.name AS material_name,
-          m.unit AS material_unit
+          m.common AS material_common,
+          m.pl AS material_pl,
+          m.de AS material_de,
+          m.en AS material_en
         FROM task_exec_actions a
         LEFT JOIN users u ON u.id = a.actor_id
         LEFT JOIN materials m ON m.id = a.material_id
         WHERE a.task_id = $1
         ORDER BY a.created_at DESC
         LIMIT $2
-        `,
-        [taskId, limit]
+      `,
+      [taskId, limit]
+    );
+
+    const locale = res.locals.locale || "pl";
+    const actions = rows.map((a) => {
+      const material = mapMaterial(
+        {
+          id: a.material_id,
+          number: a.material_number,
+          common: a.material_common,
+          pl: a.material_pl,
+          de: a.material_de,
+          en: a.material_en,
+        },
+        locale
       );
-  
-      return res.render("partials/task_material_history_list", {
-        taskId,
-        actions: rows,
-        limit,
-      });
-    } catch (err) {
-      return next(err);
-    }
-  });
+
+      return {
+        ...a,
+        material_common: material.common,
+        material_localized: material.localizedName,
+      };
+    });
+
+    return res.render("partials/task_material_history_list", {
+      taskId,
+      actions,
+      limit,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
   
   // (opcjonalnie) JSON wersja
-  router.get("/:id/material-history", ensureCanViewTask, async (req, res, next) => {
-    try {
-      const taskId = req.params.id;
-      const limit = Math.min(200, parseInt(req.query.limit || "50", 10));
-  
-      const { rows } = await pool.query(
-        `
+router.get("/:id/material-history", ensureCanViewTask, async (req, res, next) => {
+  try {
+    const taskId = req.params.id;
+    const limit = Math.min(200, parseInt(req.query.limit || "50", 10));
+
+    const { rows } = await pool.query(
+      `
         SELECT
           a.created_at,
           a.delta,
           a.actor_id,
-          u.name AS actor_name,
+          u.login AS actor_name,
           a.material_id,
           m.number AS material_number,
-          m.name AS material_name,
-          m.unit AS material_unit
+          m.common AS material_common,
+          m.pl AS material_pl,
+          m.de AS material_de,
+          m.en AS material_en
         FROM task_exec_actions a
         LEFT JOIN users u ON u.id = a.actor_id
         LEFT JOIN materials m ON m.id = a.material_id
         WHERE a.task_id = $1
         ORDER BY a.created_at DESC
         LIMIT $2
-        `,
-        [taskId, limit]
+      `,
+      [taskId, limit]
+    );
+
+    const locale = res.locals.locale || "pl";
+    const items = rows.map((a) => {
+      const material = mapMaterial(
+        {
+          id: a.material_id,
+          number: a.material_number,
+          common: a.material_common,
+          pl: a.material_pl,
+          de: a.material_de,
+          en: a.material_en,
+        },
+        locale
       );
-  
-      return res.json({ items: rows, meta: { limit, count: rows.length } });
-    } catch (err) {
-      return next(err);
-    }
-  });
+
+      return {
+        ...a,
+        material_common: material.common,
+        material_localized: material.localizedName,
+      };
+    });
+
+    return res.json({ items, meta: { limit, count: items.length } });
+  } catch (err) {
+    return next(err);
+  }
+});
   
 
 
