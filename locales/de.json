@@ -1,0 +1,30 @@
+{
+    "status": {
+      "NEW": "Erstellt",
+      "IN_PROGRESS": "In Bearbeitung",
+      "OPERATOR_CLOSED": "Vom Bediener abgeschlossen",
+      "MANAGER_CLOSED": "Geschlossen",
+      "CANCELED": "Storniert"
+    },
+    "tasks": {
+      "title": "Ladeaufträge",
+      "start": "Auftrag starten",
+      "closeOperator": "Abschließen (Bediener)",
+      "closeManager": "Abschließen (Disponent)",
+      "cancel": "Stornieren",
+      "execute": {
+        "title": "Auftragsausführung"
+      }
+    },
+    "materials": {
+      "title": "Materialien",
+      "search": "Suchen (Name oder Nummer)",
+      "add": "Hinzufügen"
+    },
+    "common": {
+      "back": "Zurück",
+      "yes": "Ja",
+      "no": "Nein"
+    }
+  }
+  

@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# runtime uploads / temp
+src/public/uploads/
+uploads/
+tmp/
+temp/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# build output (jeśli kiedyś dojdzie)
+dist/
+build/

@@ -1,0 +1,39 @@
+<ul class="task-history-list">
+  <% if (!audits || audits.length === 0) { %>
+    <li><em>Brak wpisów historii.</em></li>
+  <% } %>
+
+  <% audits.forEach(a => { %>
+    <li style="margin-bottom:8px; padding:8px; border:1px solid #ddd;">
+      <div>
+        <strong><%= a.action %></strong>
+        <small> — <%= new Date(a.created_at).toLocaleString() %></small>
+      </div>
+
+      <div>
+        <small>actor: <%= a.actor_id || "—" %></small><br/>
+        <small>changed: <%= (a.changed_keys || []).join(", ") %></small>
+      </div>
+
+      <div style="margin-top:6px;">
+        <button
+          hx-get="/tasks/<%= taskId %>/history/<%= a.id %>/partial"
+          hx-target="#audit-detail-<%= a.id %>"
+          hx-swap="innerHTML">
+          Pokaż diff
+        </button>
+      </div>
+
+      <div id="audit-detail-<%= a.id %>" style="margin-top:8px;"></div>
+    </li>
+  <% }) %>
+</ul>
+
+<% if (next_before) { %>
+  <button
+    hx-get="/tasks/<%= taskId %>/history/partial?before=<%= encodeURIComponent(next_before) %>&limit=<%= limit %>"
+    hx-target="#history-panel"
+    hx-swap="innerHTML">
+    Załaduj więcej
+  </button>
+<% } %>

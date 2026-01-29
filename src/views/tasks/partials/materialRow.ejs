@@ -1,0 +1,123 @@
+<tr id="row-<%= item.materialId %>"
+    data-search="<%= ((item.number || '') + ' ' + (item.name || '')).toLowerCase() %>"
+    style="border-bottom: 1px solid #e6e6e6;">
+
+  <td style="padding:12px; width:110px;"><strong><%= item.number %></strong></td>
+
+  <td style="padding:12px; min-width:280px;">
+    <%= item.name %> <span style="color:#666;">(<%= item.unit %>)</span>
+  </td>
+
+  <!-- PLAN -->
+  <td style="padding:12px; font-size:16px; color:#333; text-align:center; width:100px;">
+    <%= Number(item.plan || 0) %>
+  </td>
+
+  <!-- BYŁO (snapshot dla tej sesji/operatora) -->
+  <td style="padding:12px; font-size:16px; color:#666; text-align:center; width:100px;">
+    <%= Number(item.bylo || 0) %>
+  </td>
+
+  <!-- ILE DODAŁEM (suma delta dla bieżącego operatora od startu sesji) -->
+  <td style="padding:12px; font-size:16px; color:#000; font-weight:600; text-align:center; width:110px;">
+    <%= Number(item.ileDodalem || 0) %>
+  </td>
+
+  <!-- JEST (aktualny globalny stan) -->
+  <td style="padding:12px; font-size:18px; text-align:center; width:100px;">
+    <strong><%= Number(item.jest || 0) %></strong>
+  </td>
+
+  <!-- AKCJE -->
+  <td style="padding:12px; width:260px;">
+    <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+
+      <!-- Przycisk otwierający edytor -->
+      <button
+        type="button"
+        class="delta-open"
+        data-target="delta-editor-<%= item.materialId %>"
+        style="font-size:22px; padding: 10px 16px; border-radius: 10px; border:1px solid #ccc; background:#fff;">
+        +
+      </button>
+
+      <!-- (opcjonalnie) szybki minus jako osobny przycisk -->
+      <form
+        hx-post="/tasks/<%= taskId %>/materials/<%= item.materialId %>/delta"
+        hx-target="#row-<%= item.materialId %>"
+        hx-swap="outerHTML"
+        style="margin:0;">
+
+        <input type="hidden" name="actionId" value="" />
+        <input type="hidden" name="actorId" value="<%= actorId || '' %>" />
+        <input type="hidden" name="delta" value="-1" />
+
+        <button
+          type="submit"
+          style="font-size:22px; padding: 10px 18px; border-radius: 10px; border:1px solid #ccc; background:#fff;">
+          −
+        </button>
+      </form>
+
+      <!-- Edytor delta (ukryty) -->
+      <div
+        id="delta-editor-<%= item.materialId %>"
+        class="delta-editor"
+        style="display:none; padding:10px; border:1px solid #ddd; border-radius:10px; background:#fafafa; width: 220px;">
+
+        <div style="font-size:12px; color:#666; margin-bottom:6px;">
+          Wpisz ilość (może być ujemna)
+        </div>
+
+        <form
+          hx-post="/tasks/<%= taskId %>/materials/<%= item.materialId %>/delta"
+          hx-target="#row-<%= item.materialId %>"
+          hx-swap="outerHTML"
+          style="margin:0;">
+
+          <input type="hidden" name="actionId" value="" />
+          <input type="hidden" name="actorId" value="<%= actorId || '' %>" />
+
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button type="button"
+                    class="delta-step"
+                    data-step="-1"
+                    style="padding:8px 12px; border-radius:10px; border:1px solid #ccc; background:#fff;">
+              -
+            </button>
+
+            <input
+            name="delta"
+            type="number"
+            step="1"
+            min="1"
+            value="1"
+            style="width:90px; padding:10px; border-radius:10px; border:1px solid #ccc; text-align:center;"
+          />
+
+            <button type="button"
+                    class="delta-step"
+                    data-step="1"
+                    style="padding:8px 12px; border-radius:10px; border:1px solid #ccc; background:#fff;">
+              +
+            </button>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button type="submit"
+                    style="flex:1; padding:10px; border-radius:10px; border:1px solid #222; background:#222; color:#fff;">
+              Zapisz
+            </button>
+
+            <button type="button"
+                    class="delta-cancel"
+                    data-target="delta-editor-<%= item.materialId %>"
+                    style="padding:10px; border-radius:10px; border:1px solid #ccc; background:#fff;">
+              Anuluj
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </td>
+</tr>

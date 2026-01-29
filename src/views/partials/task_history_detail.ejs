@@ -1,0 +1,34 @@
+<div style="padding:8px; border:1px solid #eee; margin-top:8px;">
+    <div>
+      <strong><%= audit.action %></strong>
+      <small> — <%= new Date(audit.created_at).toLocaleString() %></small>
+    </div>
+  
+    <table style="width:100%; border-collapse:collapse; margin-top:8px;">
+      <thead>
+        <tr>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:4px;">Pole</th>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:4px;">Przed</th>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:4px;">Po</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!diff || diff.length === 0) { %>
+          <tr><td colspan="3"><em>Brak różnic</em></td></tr>
+        <% } %>
+  
+        <% diff.forEach(d => { %>
+          <tr>
+            <td style="vertical-align:top; border-bottom:1px solid #f0f0f0; padding:4px;"><%= d.key %></td>
+            <td style="vertical-align:top; border-bottom:1px solid #f0f0f0; padding:4px;">
+              <pre style="margin:0; white-space:pre-wrap;"><%= JSON.stringify(d.before) %></pre>
+            </td>
+            <td style="vertical-align:top; border-bottom:1px solid #f0f0f0; padding:4px;">
+              <pre style="margin:0; white-space:pre-wrap;"><%= JSON.stringify(d.after) %></pre>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  

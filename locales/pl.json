@@ -1,0 +1,30 @@
+{
+    "status": {
+      "NEW": "Utworzone",
+      "IN_PROGRESS": "W trakcie realizacji",
+      "OPERATOR_CLOSED": "Zakończone przez operatora",
+      "MANAGER_CLOSED": "Zamknięte",
+      "CANCELED": "Anulowane"
+    },
+    "tasks": {
+      "title": "Zlecenia załadunku",
+      "start": "Rozpocznij zlecenie",
+      "closeOperator": "Zamknij (operator)",
+      "closeManager": "Zamknij (zlecający)",
+      "cancel": "Anuluj",
+      "execute": {
+        "title": "Wykonanie zlecenia"
+      }
+    },
+    "materials": {
+      "title": "Materiały",
+      "search": "Szukaj (nazwa lub numer)",
+      "add": "Dodaj"
+    },
+    "common": {
+      "back": "Wróć",
+      "yes": "Tak",
+      "no": "Nie"
+    }
+  }
+  

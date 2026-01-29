@@ -1,0 +1,31 @@
+{
+    "status": {
+      "NEW": "Created",
+      "IN_PROGRESS": "In progress",
+      "OPERATOR_CLOSED": "Completed by operator",
+      "MANAGER_CLOSED": "Closed",
+      "CANCELED": "Canceled"
+    },
+    "tasks": {
+      "title": "Loading orders",
+      "start": "Start order",
+      "closeOperator": "Close (operator)",
+      "closeManager": "Close (manager)",
+      "cancel": "Cancel",
+      "execute": {
+        "title": "Task execution"
+      }
+      
+    },
+    "materials": {
+      "title": "Materials",
+      "search": "Search (name or number)",
+      "add": "Add"
+    },
+    "common": {
+      "back": "Back",
+      "yes": "Yes",
+      "no": "No"
+    }
+  }
+  

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="<%= locale || 'pl' %>">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= t ? t('tasks.execute.title') : 'Wykonanie zlecenia' %></title>
+
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+  <main style="max-width: 1100px; margin: 0 auto; padding: 24px;">
+    <h1 style="display:flex; align-items:center; gap:12px;">
+      <span>🚚</span>
+      <span><%= t ? t('tasks.execute.title') : 'Wykonanie zlecenia' %></span>
+    </h1>
+
+    <p style="margin-top: 6px; color:#666;">
+      Zlecenie: <code><%= taskNo || taskId %></code>
+    </p>
+
+    <% if (!actorId) { %>
+      <div style="padding:12px; background:#fff3cd; border:1px solid #ffeeba; border-radius:8px; margin: 16px 0;">
+        Brak <code>actorId</code> w URL. Na razie wejdź tak:
+        <code>/tasks/<%= taskId %>/execute?actorId=TU_UUID_OPERATORA</code>
+      </div>
+    <% } %>
+
+    <div style="margin: 18px 0;">
+      <input id="search"
+             type="text"
+             placeholder="Szukaj po numerze lub nazwie..."
+             style="width: 100%; padding: 14px 16px; font-size: 18px; border-radius: 10px; border: 1px solid #ccc;" />
+    </div>
+
+    <table style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr style="text-align:left; background:#222; color:#fff;">
+          <th style="padding:12px;">Numer</th>
+          <th style="padding:12px;">Nazwa</th>
+          <th style="padding:12px; text-align:center;">Plan</th>
+          <th style="padding:12px; text-align:center;">Było</th>
+          <th style="padding:12px; text-align:center;">Ile dodałem</th>
+          <th style="padding:12px; text-align:center;">Jest</th>
+          <th style="padding:12px; width:220px;">Akcje</th>
+        </tr>
+      </thead>
+
+      <tbody id="materialsTable">
+        <% items.forEach(item => { %>
+          <%- include("partials/materialRow", { taskId, actorId, item }) %>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <!-- Historia zmian (panel) -->
+    <hr style="margin:24px 0;" />
+    <section>
+      <h2 style="margin: 0 0 12px 0;">Historia zmian</h2>
+
+      <button
+        type="button"
+        hx-get="/tasks/<%= taskId %>/history/partial"
+        hx-target="#history-panel"
+        hx-swap="innerHTML">
+        Pokaż historię
+      </button>
+
+      <div id="history-panel" style="margin-top:12px;"></div>
+    </section>
+    <hr style="margin:24px 0;" />
+
+<section>
+  <h2 style="margin: 0 0 12px 0;">Historia materiałów</h2>
+
+  <button type="button"
+    hx-get="/tasks/<%= taskId %>/material-history/partial"
+    hx-target="#material-history-panel"
+    hx-swap="innerHTML">
+    Pokaż historię materiałów
+  </button>
+
+  <div id="material-history-panel" style="margin-top:12px;"></div>
+</section>
+
+  </main>
+
+  <script>
+    // ---------- helpers ----------
+    function uuidv4fallback() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    function makeUuid() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        try { return crypto.randomUUID(); } catch (e) {}
+      }
+      return uuidv4fallback();
+    }
+
+    function isUuid(s) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s || ''));
+    }
+
+    function getActorIdFromUrl() {
+      const url = new URL(window.location.href);
+      const actorId = (url.searchParams.get('actorId') || '').trim();
+      return isUuid(actorId) ? actorId : null;
+    }
+
+    // ---------- search filter ----------
+    const search = document.getElementById('search');
+    const tbody = document.getElementById('materialsTable');
+
+    if (search && tbody) {
+      search.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        for (const tr of tbody.querySelectorAll('tr[data-search]')) {
+          const hay = tr.getAttribute('data-search') || '';
+          tr.style.display = hay.includes(q) ? '' : 'none';
+        }
+      });
+    }
+
+    // ---------- HTMX: CSRF + actionId + actorId for EVERY request ----------
+    document.body.addEventListener('htmx:configRequest', (evt) => {
+      // CSRF header
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrfToken='))
+        ?.split('=')[1];
+
+      if (token) {
+        evt.detail.headers['X-CSRF-Token'] = token;
+      }
+
+      // Always attach parameters object
+      evt.detail.parameters = evt.detail.parameters || {};
+
+      // actionId always
+      evt.detail.parameters.actionId = makeUuid();
+
+      // actorId always, but only if valid UUID from URL
+      const actorId = getActorIdFromUrl();
+      if (actorId) {
+        if (!evt.detail.parameters.actorId) {
+          evt.detail.parameters.actorId = actorId;
+        }
+        // optional header (handy fallback on backend)
+        evt.detail.headers['X-Actor-Id'] = actorId;
+      }
+    });
+
+    // ---------- Submit guard (for non-HTMX submits or edge cases) ----------
+    document.addEventListener('submit', (ev) => {
+      const form = ev.target;
+      if (!(form instanceof HTMLFormElement)) return;
+
+      // Ensure actorId exists as input (if form expects it)
+      const actorId = getActorIdFromUrl();
+      const actorInput = form.querySelector('input[name="actorId"]');
+      if (actorInput && actorId) actorInput.value = actorId;
+
+      if (actorInput && (!actorInput.value || !isUuid(actorInput.value))) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        alert('Brak poprawnego actorId — wejdź przez URL: ?actorId=<UUID>');
+        return;
+      }
+
+      // Ensure actionId input exists if form uses it
+      const actionInput = form.querySelector('input[name="actionId"]');
+      if (actionInput) {
+        actionInput.value = makeUuid();
+      } else {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'actionId';
+        hidden.value = makeUuid();
+        form.appendChild(hidden);
+      }
+    }, true);
+
+    document.addEventListener("click", (e) => {
+  const openBtn = e.target.closest(".delta-open");
+  if (openBtn) {
+    const id = openBtn.getAttribute("data-target");
+    const el = document.getElementById(id);
+    if (el) el.style.display = (el.style.display === "none" || !el.style.display) ? "block" : "none";
+    return;
+  }
+
+  const cancelBtn = e.target.closest(".delta-cancel");
+  if (cancelBtn) {
+    const id = cancelBtn.getAttribute("data-target");
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+    return;
+  }
+
+  const stepBtn = e.target.closest(".delta-step");
+  if (stepBtn) {
+    const step = Number(stepBtn.getAttribute("data-step") || "0");
+    const editor = stepBtn.closest(".delta-editor");
+    const input = editor ? editor.querySelector('input[name="delta"]') : null;
+    if (!input) return;
+
+    const current = Number(input.value || "1");
+const next = current + step;
+input.value = String(Math.max(1, next));
+    input.focus();
+  }
+});
+
+  </script>
+</body>
+</html>
